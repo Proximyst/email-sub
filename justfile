@@ -26,13 +26,13 @@ build:
 # Builds distribution ZIPs for AWS Lambda, intended for arm64 Amazon Linux 2 Lambdas.
 dist:
     rm -rf dist
-    find cmd/ -maxdepth 1 -type d | tail -n+2 | parallel -j4 --no-notice --bar --progress "just _dist {}"
+    find cmd/ -maxdepth 1 -type d | tail -n+2 | parallel -j4 --no-notice --bar --progress "just _dist {} 2>&1"
 
 # Build one command for distribution.
 _dist dir:
     mkdir -p dist/{{dir}}
     CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o dist/{{dir}}/bootstrap -ldflags="-s -w" ./{{dir}}
-    cd dist/{{dir}} && zip $(basename {{dir}}).zip bootstrap
+    cd dist/{{dir}} && zip $(basename {{dir}}).zip bootstrap 2>&1
     mv dist/{{dir}}/$(basename {{dir}}).zip dist/
 
 # Run the binary.
