@@ -26,7 +26,7 @@ build:
 # Builds distribution ZIPs for AWS Lambda, intended for arm64 Amazon Linux 2 Lambdas.
 dist:
     rm -rf dist
-    find cmd/ -maxdepth 1 -type d | tail -n+2 | parallel -j4 --no-notice --bar --progress "just _dist {} 2>&1"
+    find cmd/ -maxdepth 1 -type d | tail -n+2 | parallel -j4 --no-notice "just _dist {} 2>&1"
 
 # Build one command for distribution.
 _dist dir:
