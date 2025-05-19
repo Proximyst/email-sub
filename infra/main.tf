@@ -8,6 +8,13 @@ terraform {
     }
   }
 
+  backend "s3" {
+    bucket  = "mariell-prod-emailsub-terraform-state"
+    key     = "terraform.tfstate"
+    region  = "eu-north-1"
+    encrypt = true
+  }
+
   required_version = ">= 1.12.0"
 }
 

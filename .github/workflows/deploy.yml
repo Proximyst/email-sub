@@ -22,6 +22,7 @@ jobs:
     permissions:
       contents: read # to check out the code
       pull-requests: write # to create pull request comments
+    environment: prod
 
     steps:
       - name: Checkout code
