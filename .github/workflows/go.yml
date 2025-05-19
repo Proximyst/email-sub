@@ -1,0 +1,108 @@
+name: Go
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  golangci-lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to check out the code
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5
+        with:
+          go-version-file: go.mod
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@1481404843c368bc19ca9406f87d6e0fc97bdcfd # v7
+        with:
+          version: v2.0
+
+  go-mod:
+    name: go.mod linting
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to check out the code
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5
+        with:
+          go-version-file: go.mod
+
+      - name: go mod tidy
+        run: |
+          if ! go mod tidy -diff; then
+            echo "go mod tidy failed. Please run 'just lint' and commit the changes."
+            exit 1
+          fi
+
+  go-generate:
+    name: go generate linter
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to check out the code
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5
+        with:
+          go-version-file: go.mod
+
+      - name: go generate
+        run: |
+          go generate ./...
+          if ! git diff --exit-code; then
+            echo "go generate failed. Please run 'just generate' and commit the changes."
+            exit 1
+          fi
+
+  test:
+    name: Run all Go tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to check out the code
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5
+        with:
+          go-version-file: go.mod
+
+      - name: Run tests
+        run: go test ./...

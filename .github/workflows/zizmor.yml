@@ -1,0 +1,53 @@
+# This job is largely lifted from Zizmor (MIT licensed; thanks, William Woodruff!): https://github.com/woodruffw/zizmor/blob/9cd012b752145be6a28ba2e9b9568c139da77b71/.github/workflows/zizmor.yml
+name: Zizmor
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  run-zizmor:
+    name: Run Zizmor check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to check out the code
+      security-events: write # for uploading the SARIF report
+      actions: read # to read the workflow files
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@6b9c6063abd6010835644d4c2e1bef4cf5cd0fca # v6.0.1
+        with:
+          # Enable caching ONLY for PRs within the main repo. Forks do not get cache.
+          # uvx will still use a cache within the job, so we don't download Zizmor multiple times.
+          enable-cache: ${{ github.repository == github.event.pull_request.head.repo.full_name }}
+
+      - name: Generate SARIF report with Zizmor
+        # I don't care about what version of Zizmor is used. Just use the latest; the token is not very strong, anyways.
+        run: uvx zizmor --format sarif . | tee results.sarif
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to GitHub security events
+        # If there are security problems, GitHub will automatically comment on the PR for us.
+        uses: github/codeql-action/upload-sarif@60168efe1c415ce0f5521ea06d5c2062adbeed1b # v3.28.17
+        with:
+          sarif_file: results.sarif
+          category: zizmor

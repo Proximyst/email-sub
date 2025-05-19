@@ -1,0 +1,66 @@
+name: Actionlint
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  run-actionlint:
+    name: Lint GitHub Actions files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # to check out the code
+      actions: read # to read the workflow files
+      security-events: write # for uploading the SARIF report
+
+    env:
+      ACTIONLINT_VERSION: 1.7.7
+      # curl -LXGET https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_checksums.txt | grep linux_amd64
+      CHECKSUM: 023070a287cd8cccd71515fedc843f1985bf96c436b7effaecce67290e7e0757
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+
+      - name: Cache Actionlint binary
+        id: cache
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: actionlint
+          key: ${{ runner.os }}-actionlint-${{ env.ACTIONLINT_VERSION }}-${{ hashFiles('.github/workflows/actionlint.yml') }}
+
+      # GitHub Actions only runs x86_64. This will break if that assumption changes.
+      - name: Download Actionlint
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          curl -OLXGET https://github.com/rhysd/actionlint/releases/download/v"${ACTIONLINT_VERSION}"/actionlint_"${ACTIONLINT_VERSION}"_linux_amd64.tar.gz
+          echo "${CHECKSUM}  actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" | sha256sum -c -
+          tar xzf actionlint_"${ACTIONLINT_VERSION}"_linux_amd64.tar.gz
+          test -f actionlint
+          chmod +x actionlint
+
+      - name: Run Actionlint
+        run: ./actionlint -format "$(cat .github/workflows/actionlint-format.txt)" | tee results.sarif
+
+      - name: Upload to GitHub security events
+        if: success() || failure()
+        # If there are security problems, GitHub will automatically comment on the PR for us.
+        uses: github/codeql-action/upload-sarif@60168efe1c415ce0f5521ea06d5c2062adbeed1b # v3.28.17
+        with:
+          sarif_file: results.sarif
+          category: actionlint

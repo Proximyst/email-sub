@@ -1,0 +1,56 @@
+name: CodeQL Analysis
+
+on:
+  workflow_dispatch: # manual trigger
+  push:
+    branches: ['**'] # run on all branches
+  schedule:
+    - cron: '0 0 * * *' # every day at midnight UTC
+
+permissions: {}
+
+jobs:
+  analyse:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning#changing-the-languages-that-are-analyzed
+          - language: go
+            build-mode: autobuild
+
+    name: Analyse (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # clone repository
+      actions: read # read workflow files
+      security-events: write # upload SARIF report
+      packages: read # private codeql packs
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - if: matrix.language == 'go'
+        name: Set up Go
+        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5
+        with:
+          go-version-file: go.mod
+
+      - name: Init CodeQL
+        uses: github/codeql-action/init@1a7989f3955e0c69f0e0ccc14aee54a387a0fd31 # v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          # If you wish to specify custom queries, you can do so here or in a config file.
+          # By default, queries listed here will override any specified in a config file.
+          # Prefix the list here with "+" to use these queries and those in the config file.
+          # queries: ./path/to/local/query, your-org/your-repo/queries@main
+
+      - name: Analysis
+        uses: github/codeql-action/analyze@86b04fb0e47484f7282357688f21d5d0e32175fe # v3
+        with:
+          category: /language:${{ matrix.language }}
