@@ -5,6 +5,7 @@ lint: && generate
     go mod tidy
     golangci-lint run --fast-only --fix
     goimports -w .
+    terraform fmt -recursive
 
 # Generate code.
 generate:
@@ -32,8 +33,10 @@ dist:
 _dist dir:
     mkdir -p dist/{{dir}}
     CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o dist/{{dir}}/bootstrap -ldflags="-s -w" ./{{dir}}
-    cd dist/{{dir}} && zip $(basename {{dir}}).zip bootstrap 2>&1
-    mv dist/{{dir}}/$(basename {{dir}}).zip dist/
+
+# Build and deploy binaries to AWS.
+deploy: dist
+    cd infra && terraform apply
 
 # Run the binary.
 run *ARGS: build
@@ -56,3 +59,4 @@ _precommit:
     actionlint
     goimports -l .
     go mod tidy -diff
+    terraform fmt -check -recursive
