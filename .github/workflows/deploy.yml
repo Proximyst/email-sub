@@ -87,7 +87,7 @@ jobs:
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
       - name: Terraform Apply
-        uses: dflook/terraform-apply@8252c0d50481398de31391c77e1345d2d85d6a45 # v1
+        uses: dflook/terraform-apply@70dfc63e60eb6a958c5673b004acce250432ecdc # v1
         with:
           path: infra
           auto_approve: true
