@@ -48,7 +48,7 @@ jobs:
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
       - name: Terraform Plan
-        uses: dflook/terraform-plan@b7bf0aabcffd1699464b3ef10c9bff6b265231c0 # v1
+        uses: dflook/terraform-plan@5c312f52c8997a0833d0cfd44573a6225f1d0a0c # v1
         with:
           path: infra
         env:
