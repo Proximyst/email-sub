@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.31.2
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.49.1
 	github.com/aws/aws-sdk-go-v2/service/ses v1.33.2
-	github.com/aws/aws-sdk-go-v2/service/sqs v1.42.0
+	github.com/aws/aws-sdk-go-v2/service/sqs v1.42.1
 	github.com/mmcdole/gofeed v1.3.0
 	github.com/stretchr/testify v1.11.0
 	golang.org/x/sync v0.16.0
